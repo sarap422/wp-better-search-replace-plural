@@ -40,6 +40,13 @@ if ( ! defined( 'BSR_PATH' ) ) exit;
 
 				<div class="panel-content">
 
+					<!--Pairs Toolbar (Import/Export)-->
+					<div class="bsr-pairs-toolbar">
+						<button type="button" id="bsr-import-pairs" class="button"><?php _e( 'Import Pairs', 'better-search-replace' ); ?></button>
+						<button type="button" id="bsr-export-pairs" class="button"><?php _e( 'Export Pairs', 'better-search-replace' ); ?></button>
+						<input type="file" id="bsr-import-file" accept=".json,application/json" hidden />
+					</div>
+
 					<!--Search/Replace Pairs Container-->
 					<div id="bsr-pairs-container">
 

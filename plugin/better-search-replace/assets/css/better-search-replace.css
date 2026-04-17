@@ -967,6 +967,13 @@ select option {
 
 /* === Plural: Pair Management === */
 
+.bsr-pairs-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacer-xs);
+  margin-bottom: var(--spacer-md);
+}
+
 #bsr-pairs-container {
   display: flex;
   flex-direction: column;

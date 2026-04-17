@@ -12,6 +12,7 @@
 	 */
 	function bsr_init() {
 		bsr_init_pairs();
+		bsr_init_import_export();
 		bsr_search_replace();
 		bsr_update_sliders();
 	}
@@ -123,6 +124,180 @@
 		$( '#bsr-pairs-container .bsr-pair' ).each( function( i ) {
 			$( this ).find( '.bsr-pair-number' ).text( '#' + ( i + 1 ) );
 		});
+	}
+
+	/**
+	 * Displays an error message in the standard error wrap.
+	 */
+	function bsr_show_error( msg ) {
+		$( '#bsr-error-wrap' ).html( '<div class="error"><p></p></div>' ).show();
+		$( '#bsr-error-wrap p' ).text( msg );
+	}
+
+	/**
+	 * Builds a YYYYMMDDHHMMSS timestamp for export filenames.
+	 */
+	function bsr_build_timestamp() {
+		var d = new Date();
+		var pad = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
+		return d.getFullYear() +
+			pad( d.getMonth() + 1 ) +
+			pad( d.getDate() ) +
+			pad( d.getHours() ) +
+			pad( d.getMinutes() ) +
+			pad( d.getSeconds() );
+	}
+
+	/**
+	 * Initializes Import/Export button handlers.
+	 */
+	function bsr_init_import_export() {
+
+		$( '#bsr-export-pairs' ).on( 'click', function() {
+			bsr_export_pairs();
+		});
+
+		$( '#bsr-import-pairs' ).on( 'click', function() {
+			// Reset value so re-selecting the same file fires change event.
+			$( '#bsr-import-file' ).val( '' ).trigger( 'click' );
+		});
+
+		$( '#bsr-import-file' ).on( 'change', function( e ) {
+			var file = e.target.files && e.target.files[0];
+			if ( ! file ) { return; }
+			bsr_import_pairs( file );
+		});
+	}
+
+	/**
+	 * Collects current pairs from DOM and triggers a JSON file download.
+	 * Empty search_for pairs are excluded. DOES NOT trim values (P004).
+	 */
+	function bsr_export_pairs() {
+		var pairs = [];
+		$( '.bsr-pair' ).each( function() {
+			var search  = $( this ).find( '.bsr-search-input' ).val();
+			var replace = $( this ).find( '.bsr-replace-input' ).val();
+			// Empty search_for is the only filter (replace_with empty = deletion is valid).
+			if ( typeof search === 'string' && search !== '' ) {
+				pairs.push({
+					search_for:   search,
+					replace_with: typeof replace === 'string' ? replace : ''
+				});
+			}
+		});
+
+		if ( pairs.length === 0 ) {
+			bsr_show_error( bsr_object_vars.export_empty );
+			return;
+		}
+
+		// Clear any previous error.
+		$( '#bsr-error-wrap' ).html( '' ).hide();
+
+		var payload = {
+			format:      'bsr-pairs',
+			version:     1,
+			exported_at: new Date().toISOString(),
+			pairs:       pairs
+		};
+
+		var json = JSON.stringify( payload, null, 2 );
+		var blob = new Blob( [ json ], { type: 'application/json' } );
+		var url  = URL.createObjectURL( blob );
+
+		var a = document.createElement( 'a' );
+		a.href     = url;
+		a.download = 'bsr-pairs-' + bsr_build_timestamp() + '.json';
+		document.body.appendChild( a );
+		a.click();
+		document.body.removeChild( a );
+
+		// Free memory after a tick (some browsers need the click to register first).
+		setTimeout( function() { URL.revokeObjectURL( url ); }, 0 );
+	}
+
+	/**
+	 * Imports pairs from a user-selected JSON file.
+	 * Validates structure, prompts on existing input, then replaces pairs.
+	 */
+	function bsr_import_pairs( file ) {
+
+		// Extension check (case-insensitive).
+		if ( ! /\.json$/i.test( file.name ) ) {
+			bsr_show_error( bsr_object_vars.import_invalid_ext );
+			return;
+		}
+
+		var reader = new FileReader();
+
+		reader.onload = function( e ) {
+			var data;
+			try {
+				data = JSON.parse( e.target.result );
+			} catch ( err ) {
+				bsr_show_error( bsr_object_vars.import_parse_error );
+				return;
+			}
+
+			if ( ! data || ! Array.isArray( data.pairs ) ) {
+				bsr_show_error( bsr_object_vars.import_invalid_struct );
+				return;
+			}
+
+			// Filter to valid pairs (search_for must be a string; empty string is invalid).
+			var validPairs = [];
+			for ( var i = 0; i < data.pairs.length; i++ ) {
+				var p = data.pairs[i];
+				if ( p && typeof p.search_for === 'string' && p.search_for !== '' ) {
+					validPairs.push({
+						search_for:   p.search_for,
+						replace_with: typeof p.replace_with === 'string' ? p.replace_with : ''
+					});
+				}
+			}
+
+			if ( validPairs.length === 0 ) {
+				bsr_show_error( bsr_object_vars.import_no_pairs );
+				return;
+			}
+
+			// Smart replace: confirm only when user has typed something.
+			var hasInput = false;
+			$( '.bsr-pair' ).each( function() {
+				var s = $( this ).find( '.bsr-search-input' ).val();
+				var r = $( this ).find( '.bsr-replace-input' ).val();
+				if ( s || r ) {
+					hasInput = true;
+					return false; // break
+				}
+			});
+
+			if ( hasInput && ! window.confirm( bsr_object_vars.import_confirm ) ) {
+				return;
+			}
+
+			// Replace all pairs.
+			$( '#bsr-pairs-container' ).empty();
+			for ( var j = 0; j < validPairs.length; j++ ) {
+				var idx = bsrPairCounter++;
+				var el  = bsr_create_pair_element( idx );
+				$( '#bsr-pairs-container' ).append( el );
+				var $pair = $( '#bsr-pairs-container .bsr-pair' ).last();
+				$pair.find( '.bsr-search-input' ).val( validPairs[j].search_for );
+				$pair.find( '.bsr-replace-input' ).val( validPairs[j].replace_with );
+			}
+			bsr_update_pair_numbers();
+
+			// Clear errors on success.
+			$( '#bsr-error-wrap' ).html( '' ).hide();
+		};
+
+		reader.onerror = function() {
+			bsr_show_error( bsr_object_vars.import_read_error );
+		};
+
+		reader.readAsText( file );
 	}
 
 	/**

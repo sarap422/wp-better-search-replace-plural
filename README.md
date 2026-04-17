@@ -18,7 +18,7 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 | ファイル | 変更内容 |
 |---------|---------|
 | `better-search-replace.php` | Plugin Name/Version/BSR_NAME リネーム |
-| `includes/class-bsr-admin.php` | ペアUI用スクリプト変数追加、`prefill_value()` 配列対応、`get_prefill_pairs_json()` 新設 |
+| `includes/class-bsr-admin.php` | ペアUI用スクリプト変数追加、`prefill_value()` 配列対応、`get_prefill_pairs_json()` 新設、Import/Export用ローカライズ文字列追加 |
 | `includes/class-bsr-ajax.php` | `search_for[]` / `replace_with[]` 配列パース、ペア構築、ペア別レポート集約 |
 | `includes/class-bsr-db.php` | `apply_pairs()` ヘルパー追加、`srdb()` 2箇所を `apply_pairs()` に置換 |
 
@@ -26,13 +26,13 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `templates/bsr-search-replace.php` | 単一入力 → ペアコンテナUI（`#bsr-pairs-container`、動的追加/削除） |
+| `templates/bsr-search-replace.php` | 単一入力 → ペアコンテナUI（`#bsr-pairs-container`、動的追加/削除）、Import/Exportツールバー追加 |
 
 ### JS / CSS（4ファイル）
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `assets/js/better-search-replace.js` | ペア追加/削除/番号更新、DOM安全生成、バリデーション |
+| `assets/js/better-search-replace.js` | ペア追加/削除/番号更新、DOM安全生成、バリデーション、Import/Export機能 |
 | `assets/js/better-search-replace.min.js` | 上記のminified版 |
 | `assets/css/better-search-replace.css` | ペア管理UIのCSS追加（末尾約80行） |
 | `assets/css/better-search-replace.min.css` | 上記のminified版 |
@@ -48,6 +48,7 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 
 ### `includes/class-bsr-admin.php`
 - `wp_localize_script()` に `label_search`, `label_replace`, `remove_pair` 文字列を追加
+- `wp_localize_script()` に Import/Export 用文字列7種を追加（`export_empty`, `import_invalid_ext`, `import_parse_error`, `import_invalid_struct`, `import_no_pairs`, `import_read_error`, `import_confirm`）
 - バリデーションメッセージを「At least one search string must be defined.」に変更
 - 結果メッセージにペア数表示を追加
 - `prefill_value()` メソッドに第3引数 `$index` を追加（配列対応）
@@ -72,6 +73,7 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 - ペア番号表示、削除ボタン（`:only-child` 時CSS非表示）
 - 「+ Add Pair」ボタン
 - Dry Run後のprefill復元スクリプト
+- Import/Exportツールバー（`.bsr-pairs-toolbar`）：ペアコンテナ直上、ボタン2つと隠しファイル入力
 
 ### `assets/js/better-search-replace.js`
 - `bsrPairCounter`: ペアID管理（増加のみ、リセットなし）
@@ -79,12 +81,43 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 - `bsr_create_pair_element()`: DOM安全生成（createElement + textContent）
 - `bsr_update_pair_numbers()`: 削除後の番号振り直し
 - バリデーション: 「少なくとも1つの検索文字列」チェック
+- `bsr_init_import_export()`: Import/Export ボタンのイベントハンドラ
+- `bsr_export_pairs()`: 画面ペア → JSON Blob → ダウンロード（ファイル名 `bsr-pairs-YYYYMMDDHHMMSS.json`）
+- `bsr_import_pairs()`: FileReader → JSONパース → 構造検証 → スマート置換（既存入力ありなら confirm）
+- `bsr_show_error()` / `bsr_build_timestamp()`: 共通ユーティリティ
 
 ### `assets/css/better-search-replace.css`
 - `.bsr-pair` コンテナ、ヘッダ、番号表示
 - `.bsr-remove-pair` 削除ボタン（`:only-child` 非表示制御）
 - `#bsr-add-pair` 追加ボタン
 - `.bsr-pair-note` 注記テキスト
+- `.bsr-pairs-toolbar` Import/Exportボタン用（右寄せflexコンテナ）
+
+## Import/Export 機能
+
+### エクスポート
+- `Export Pairs` ボタン → 画面のペア（`search_for` 非空のもの）をJSONでダウンロード
+- ファイル名: `bsr-pairs-YYYYMMDDHHMMSS.json`
+- フォーマット例:
+
+```json
+{
+  "format": "bsr-pairs",
+  "version": 1,
+  "exported_at": "2026-04-17T12:34:56.789Z",
+  "pairs": [
+    { "search_for": "https://old.example.com", "replace_with": "https://new.example.com" },
+    { "search_for": "old-name", "replace_with": "new-name" }
+  ]
+}
+```
+
+### インポート
+- `Import Pairs` ボタン → ファイル選択ダイアログ → 読み込み・検証 → ペア復元
+- 既存ペアが空のみの場合: 確認なしで置き換え
+- 既存ペアに入力がある場合: confirm() で確認後に置き換え
+- バリデーション: 拡張子（.json）、JSONパース、`pairs` 配列の存在、有効ペア1件以上
+- 全処理クライアントサイド完結（AJAX/サーバー往復なし）
 
 ## BSR本体アップデート時の追従手順
 

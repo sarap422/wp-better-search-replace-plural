@@ -76,6 +76,13 @@ class BSR_Admin {
 				'label_search'  => __( 'Search for', 'better-search-replace' ),
 				'label_replace' => __( 'Replace with', 'better-search-replace' ),
 				'remove_pair'   => __( 'Remove this pair', 'better-search-replace' ),
+				'export_empty'         => __( 'No pairs to export. Please enter at least one search string.', 'better-search-replace' ),
+				'import_invalid_ext'   => __( 'Please select a .json file.', 'better-search-replace' ),
+				'import_parse_error'   => __( 'Invalid JSON file. Could not parse.', 'better-search-replace' ),
+				'import_invalid_struct'=> __( 'Invalid file format. Missing "pairs" array.', 'better-search-replace' ),
+				'import_no_pairs'      => __( 'No valid pairs found in the file.', 'better-search-replace' ),
+				'import_read_error'    => __( 'Failed to read the file.', 'better-search-replace' ),
+				'import_confirm'       => __( 'Replace existing pairs with imported data?', 'better-search-replace' ),
 			) );
 		}
 	}
