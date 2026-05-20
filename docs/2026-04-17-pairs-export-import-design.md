@@ -2,7 +2,7 @@
 
 - **タスク**: 0417.1
 - **日付**: 2026-04-17
-- **対象**: Better Search Replace Plural v1.5.0 →（パッチ拡張）
+- **対象**: Better Search Replace Plural v1.4.10r →（パッチ拡張）
 
 ## 1. 目的
 

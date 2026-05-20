@@ -2,29 +2,31 @@
 /**
  * Better Search Replace Plural
  *
- * This plugin extends Better Search Replace with support for multiple
- * search/replace keyword pairs in a single operation. Based on Better
- * Search Replace v1.4.10 by WP Engine.
+ * Extends Better Search Replace with multiple search/replace pair support,
+ * allowing bulk replacements in a single operation.
  *
- * @since             2.0.0
+ * Based on Better Search Replace v1.4.10 by WP Engine, licensed under GPL-2.0.
+ * https://wordpress.org/plugins/better-search-replace/
+ *
+ * @since             1.4.10r
  * @package           Better_Search_Replace
  *
  * @wordpress-plugin
  * Plugin Name:       Better Search Replace Plural
- * Plugin URI:        https://bettersearchreplace.com
+ * Plugin URI:        https://github.com/sarap422/wp-better-search-replace-plural
  * Description:       Search/replace with multiple keyword pairs support. Based on Better Search Replace.
- * Version:           2.0.0
- * Author:            WP Engine (Plural fork)
- * Author URI:        https://bettersearchreplace.com
- * License:           GPL-3.0
- * License URI:       http://www.gnu.org/licenses/gpl-3.0.txt
+ * Version:           1.4.10r
+ * Author:            sarap422
+ * Author URI:        https://github.com/sarap422/wp-better-search-replace-plural
+ * License:           GPL-2.0
+ * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       better-search-replace
  * Domain Path:       /languages
  * Network:           true
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -52,7 +54,7 @@ if ( ! function_exists( 'run_better_search_replace' ) ) {
 	define( 'BSR_URL', plugin_dir_url( BSR_FILE ) );
 
 	// Defines the current version of the plugin.
-	define( 'BSR_VERSION', '2.0.0' );
+	define( 'BSR_VERSION', '1.4.10r' );
 
 	// Defines the name of the plugin.
 	define( 'BSR_NAME', 'Better Search Replace Plural' );
