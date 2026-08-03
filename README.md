@@ -1,4 +1,4 @@
-# Better Search Replace Plural
+# Better Search Replace Plural v1.4.11r
 
 Better Search Replace v1.4.11 に「**複数ペア一括置換**」機能を追加するパッチファイル群です。
 
