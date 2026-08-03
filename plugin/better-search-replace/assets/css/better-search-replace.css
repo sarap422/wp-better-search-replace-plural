@@ -123,7 +123,7 @@
 	--color-header: #383A46;
 	--color-nav: #262932;
 	--color-body-text: #3C3B59;
-	--color-desc-text: #6E6D99;
+	--color-desc-base-900: #6E6D99;
 	--color-panel-heading: #708AA4;
 	--color-secondary-hover: rgba(0, 115, 170, .15);
 	--color-secondary-focus: rgba(0, 115, 170, .4);
@@ -749,7 +749,7 @@ label.replace_guids img {
 }
 
 .description {
-	color: var(--color-desc-text) !important;
+	color: var(--color-desc-base-900) !important;
 }
 
 p.submit {
@@ -1105,7 +1105,7 @@ select option {
 .bsr-pair-number {
 	font-size: 15px;
 	font-weight: 500;
-	color: var(--color-desc-text);
+	color: var(--color-desc-base-900);
 }
 
 .row.search-replace {
@@ -1116,7 +1116,7 @@ select option {
 	background: none;
 	border: 1px solid var(--color-divider);
 	border-radius: var(--panel-border-radius);
-	color: var(--color-desc-text);
+	color: var(--color-desc-base-900);
 	cursor: pointer;
 	font-size: 18px;
 	line-height: 1;

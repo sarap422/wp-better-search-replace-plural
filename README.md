@@ -1,6 +1,6 @@
 # Better Search Replace Plural
 
-Better Search Replace v1.4.10 に「**複数ペア一括置換**」機能を追加するパッチファイル群です。
+Better Search Replace v1.4.11 に「**複数ペア一括置換**」機能を追加するパッチファイル群です。
 
 通常の Better Search Replace は検索/置換の入力欄が1組だけですが、このパッチを適用すると複数のペアをまとめて一度に実行できるようになります。ペアの保存・読み込みに対応した Import/Export 機能も追加されます。
 
@@ -10,13 +10,15 @@ Better Search Replace v1.4.10 に「**複数ペア一括置換**」機能を追�
 
 ## 動作要件
 
-- WordPress 5.0+
-- [Better Search Replace](https://wordpress.org/plugins/better-search-replace/) **v1.4.10**（他のバージョンでは動作を保証しません）
-- PHP 7.4+
+- WordPress 6.2+
+- [Better Search Replace](https://wordpress.org/plugins/better-search-replace/) **v1.4.11**（他のバージョンでは動作を保証しません）
+- PHP 8.1+
+
+> BSR v1.4.11 より WordPress 6.2+ / PHP 8.1+ が必須になりました。旧環境では v1.4.10r をご利用ください。
 
 ## 適用方法
 
-1. WordPress に Better Search Replace v1.4.10 を通常インストール
+1. WordPress に Better Search Replace v1.4.11 を通常インストール
 2. このリポジトリの `plugin/better-search-replace/` 以下のファイルを、`wp-content/plugins/better-search-replace/` に上書きコピー
 
 ```bash
@@ -59,8 +61,8 @@ Export されるファイルの形式:
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `better-search-replace.php` | Plugin Name / Version / BSR_NAME リネーム |
-| `includes/class-bsr-admin.php` | ペア UI 用スクリプト変数追加、`prefill_value()` 配列対応、`get_prefill_pairs_json()` 新設、Import/Export 用ローカライズ文字列追加 |
+| `better-search-replace.php` | Plugin Name / Version / BSR_NAME リネーム（`Requires at least` / `Requires PHP` ヘッダーは本体の版数チェックが読むため維持） |
+| `includes/class-bsr-admin.php` | ペア UI 用スクリプト変数追加、`prefill_value()` 配列対応、`get_prefill_pairs_json()` 新設、Import/Export 用ローカライズ文字列追加、ペア数の結果表示 |
 | `includes/class-bsr-ajax.php` | `search_for[]` / `replace_with[]` 配列パース、ペア構築、ペア別レポート集約 |
 | `includes/class-bsr-db.php` | `apply_pairs()` ヘルパー追加、`srdb()` 2箇所を `apply_pairs()` に置換 |
 
@@ -83,20 +85,41 @@ Export されるファイルの形式:
 
 ## BSR 本体アップデート時の追従手順
 
-Better Search Replace がアップデートした場合、以下の手順でパッチをマージしてください。
+Better Search Replace がアップデートした場合、以下の手順でパッチを作り直してください。
 
-1. BSR 新バージョンのリリースノートを確認
-2. 上記ファイルについて、新バージョンとの差分を確認:
+**方針**: 既存パッチに本体差分をマージするのではなく、**新バージョンのファイルを新しいベースとして、パッチ内容を再適用する**。BSR はセキュリティ修正でファイル全体を書き換えることがあるため、この方向のほうが安全です。
+
+1. BSR 新バージョンのリリースノートを確認（`README.txt` の Changelog）
+2. 新旧の zip を `gitignore/` に置いて展開し、3 方向の差分を取る:
    ```bash
-   diff original/better-search-replace/<file> <new-version>/<file>
+   unzip -q gitignore/better-search-replace.<old>.zip -d /tmp/old
+   unzip -q gitignore/better-search-replace.<new>.zip -d /tmp/new
+
+   # ① 本体の変更内容（何が変わったか）
+   diff -u /tmp/old/better-search-replace/<file> /tmp/new/better-search-replace/<file>
+
+   # ② 自分たちの変更内容（何を足したか）
+   diff -u /tmp/old/better-search-replace/<file> plugin/better-search-replace/<file>
    ```
-3. 本体側の変更をパッチファイルにマージ
-4. JS/CSS を変更した場合は minified 版を再生成:
+3. 新バージョンのファイルをベースにコピーし、② の変更を再適用
+4. 再適用後、新バージョンとの差分が意図どおりか確認:
    ```bash
-   npx terser assets/js/better-search-replace.js --compress --mangle -o assets/js/better-search-replace.min.js
+   diff -u /tmp/new/better-search-replace/<file> plugin/better-search-replace/<file>
+   ```
+5. JS/CSS を変更した場合は minified 版を再生成:
+   ```bash
+   npx terser assets/js/better-search-replace.js --compress --mangle \
+     --source-map "url='better-search-replace.min.js.map'" \
+     -o assets/js/better-search-replace.min.js
    npx clean-css-cli -o assets/css/better-search-replace.min.css assets/css/better-search-replace.css
    ```
-5. 動作確認
+6. シンタックスチェックと、min 版へのペア機能の混入確認:
+   ```bash
+   php -l plugin/better-search-replace/includes/*.php
+   node --check plugin/better-search-replace/assets/js/better-search-replace.min.js
+   grep -c 'bsr-pairs-container' plugin/better-search-replace/assets/js/better-search-replace.min.js  # 0 なら生成失敗
+   ```
+7. 動作確認
 
 ## 設計上の注意点
 
@@ -105,11 +128,20 @@ Better Search Replace がアップデートした場合、以下の手順でパ�
 - **ペア ID**: カウンター増加のみ、リセット禁止（ID 重複防止）
 - **DOM 生成**: innerHTML 禁止、createElement + textContent 使用（XSS 防止）
 - **Text Domain**: `better-search-replace` を維持（既存翻訳互換）
+- **型チェック**: `parse_str()` 由来の配列要素は文字列とは限らないため、`stripslashes()` 適用前に `is_string()` で判定（PHP 8 の TypeError 防止）
+- **インライン JSON**: `wp_json_encode()` に `JSON_HEX_TAG` 等を指定し、ユーザー入力が `<script>` を脱出しないようにする
 
 ## ベースバージョン
 
-- Better Search Replace: **v1.4.10**
-- パッチバージョン: **v1.4.10r**
+- Better Search Replace: **v1.4.11**
+- パッチバージョン: **v1.4.11r**
+
+### バージョン対応表
+
+| パッチ | ベース BSR | WordPress | PHP |
+|-------|-----------|-----------|-----|
+| v1.4.11r | v1.4.11 | 6.2+ | 8.1+ |
+| v1.4.10r | v1.4.10 | 5.0+ | 7.4+ |
 
 ## License
 
