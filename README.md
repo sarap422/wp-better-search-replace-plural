@@ -1,4 +1,4 @@
-# Better Search Replace Plural v1.4.11r
+# Better Search Replace Plural v1.4.11r1
 
 Better Search Replace v1.4.11 に「**複数ペア一括置換**」機能を追加するパッチファイル群です。
 
@@ -14,7 +14,7 @@ Better Search Replace v1.4.11 に「**複数ペア一括置換**」機能を追�
 - [Better Search Replace](https://wordpress.org/plugins/better-search-replace/) **v1.4.11**（他のバージョンでは動作を保証しません）
 - PHP 8.1+
 
-> BSR v1.4.11 より WordPress 6.2+ / PHP 8.1+ が必須になりました。旧環境では v1.4.10r をご利用ください。
+> BSR v1.4.11 より WordPress 6.2+ / PHP 8.1+ が必須になりました。旧環境では v1.4.10r1 をご利用ください。
 
 ## 適用方法
 
@@ -34,6 +34,17 @@ cp -r plugin/better-search-replace/* /path/to/wp-content/plugins/better-search-r
 - 「+ Add Pair」ボタンで検索/置換ペアを追加
 - 各ペアは個別に削除可能
 - Dry Run 後もペアが復元される
+
+### 置換後のオブジェクトキャッシュ自動クリア（r1〜）
+
+- 永続オブジェクトキャッシュ（APCu / Redis / Memcached 等の `object-cache.php`）が有効な環境では、本番実行（Dry Run 以外）の完了時に `wp_cache_flush()` を自動実行
+- BSR は SQL で直接 DB を書き換えるため、クリアしないと編集画面・フロントが置換前の内容を表示し続ける
+- 結果レポート（transient `bsr_results`）はキャッシュ内にあるため、クリアの前後で退避・復元する
+
+### 更新通知の抑止（r1〜）
+
+- プラグインヘッダーに `Update URI` を指定し、wordpress.org の公式版（例: 1.4.11）を「新バージョン」として通知しないようにした（WordPress 5.8+）
+- 公式版で「更新」するとパッチが消えるため。本体の新版への追従は README の手順で行う
 
 ### Import / Export
 
@@ -61,9 +72,9 @@ Export されるファイルの形式:
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `better-search-replace.php` | Plugin Name / Version / BSR_NAME リネーム（`Requires at least` / `Requires PHP` ヘッダーは本体の版数チェックが読むため維持） |
+| `better-search-replace.php` | Plugin Name / Version / BSR_NAME リネーム、`Update URI` 追加（`Requires at least` / `Requires PHP` ヘッダーは本体の版数チェックが読むため維持） |
 | `includes/class-bsr-admin.php` | ペア UI 用スクリプト変数追加、`prefill_value()` 配列対応、`get_prefill_pairs_json()` 新設、Import/Export 用ローカライズ文字列追加、ペア数の結果表示 |
-| `includes/class-bsr-ajax.php` | `search_for[]` / `replace_with[]` 配列パース、ペア構築、ペア別レポート集約 |
+| `includes/class-bsr-ajax.php` | `search_for[]` / `replace_with[]` 配列パース、ペア構築、ペア別レポート集約、本番実行後のオブジェクトキャッシュクリア（`maybe_flush_object_cache()`） |
 | `includes/class-bsr-db.php` | `apply_pairs()` ヘルパー追加、`srdb()` 2箇所を `apply_pairs()` に置換 |
 
 ### テンプレート（1ファイル）
@@ -129,19 +140,20 @@ Better Search Replace がアップデートした場合、以下の手順でパ�
 - **DOM 生成**: innerHTML 禁止、createElement + textContent 使用（XSS 防止）
 - **Text Domain**: `better-search-replace` を維持（既存翻訳互換）
 - **型チェック**: `parse_str()` 由来の配列要素は文字列とは限らないため、`stripslashes()` 適用前に `is_string()` で判定（PHP 8 の TypeError 防止）
+- **キャッシュクリア**: 本体追従で `class-bsr-ajax.php` を作り直す際も、完了処理（`maybe_update_site_url()` の直後）の `maybe_flush_object_cache()` 呼び出しと `Update URI` ヘッダーを再適用する
 - **インライン JSON**: `wp_json_encode()` に `JSON_HEX_TAG` 等を指定し、ユーザー入力が `<script>` を脱出しないようにする
 
 ## ベースバージョン
 
 - Better Search Replace: **v1.4.11**
-- パッチバージョン: **v1.4.11r**
+- パッチバージョン: **v1.4.11r1**
 
 ### バージョン対応表
 
 | パッチ | ベース BSR | WordPress | PHP |
 |-------|-----------|-----------|-----|
-| v1.4.11r | v1.4.11 | 6.2+ | 8.1+ |
-| v1.4.10r | v1.4.10 | 5.0+ | 7.4+ |
+| v1.4.11r1 | v1.4.11 | 6.2+ | 8.1+ |
+| v1.4.10r1 | v1.4.10 | 5.0+（更新通知の抑止は 5.8+） | 7.4+ |
 
 ## License
 

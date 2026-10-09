@@ -15,11 +15,12 @@
  * Plugin Name:       Better Search Replace Plural
  * Plugin URI:        https://github.com/sarap422/wp-better-search-replace-plural
  * Description:       Search/replace with multiple keyword pairs support. Based on Better Search Replace.
- * Version:           1.4.11r
+ * Version:           1.4.11r1
  * Requires at least: 6.2
  * Requires PHP:      8.1
  * Author:            sarap422
  * Author URI:        https://github.com/sarap422/wp-better-search-replace-plural
+ * Update URI:        https://github.com/sarap422/wp-better-search-replace-plural
  * License:           GPL-2.0
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       better-search-replace
@@ -60,7 +61,7 @@ if ( ! function_exists( 'run_better_search_replace' ) ) {
 	define( 'BSR_URL', plugin_dir_url( BSR_FILE ) );
 
 	// Defines the current version of the plugin.
-	define( 'BSR_VERSION', '1.4.11r' );
+	define( 'BSR_VERSION', '1.4.11r1' );
 
 	// Defines the name of the plugin.
 	define( 'BSR_NAME', 'Better Search Replace Plural' );

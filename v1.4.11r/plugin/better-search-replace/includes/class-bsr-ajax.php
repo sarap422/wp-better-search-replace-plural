@@ -258,6 +258,7 @@ class BSR_AJAX {
 
 		} else {
 			$db->maybe_update_site_url();
+			$this->maybe_flush_object_cache( $args );
 			$step       = 'done';
 			$percentage = '100%';
 		}
@@ -278,6 +279,34 @@ class BSR_AJAX {
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 		wp_send_json( $result );
+	}
+
+	/**
+	 * Flushes the persistent object cache after a live run.
+	 *
+	 * Rows are updated with direct SQL, which bypasses clean_post_cache() and
+	 * other invalidation, so a persistent object cache (APCu, Redis, ...) would
+	 * keep serving the old values. Transients are stored in that cache too,
+	 * so the run report is carried across the flush.
+	 *
+	 * @access private
+	 * @param  array $args The arguments used for this run.
+	 */
+	private function maybe_flush_object_cache( $args ) {
+		if ( ! wp_using_ext_object_cache() ) {
+			return;
+		}
+
+		if ( ! is_array( $args ) || ! isset( $args['dry_run'] ) || 'on' === $args['dry_run'] ) {
+			return;
+		}
+
+		$results = get_transient( 'bsr_results' );
+		wp_cache_flush();
+
+		if ( false !== $results ) {
+			set_transient( 'bsr_results', $results, DAY_IN_SECONDS );
+		}
 	}
 
 	/**
